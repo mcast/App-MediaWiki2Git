@@ -1,0 +1,6 @@
+#! /usr/bin/env perl
+
+use App::MediaWiki2Git;
+
+my $m2g = App::MediaWiki2Git->new;
+$m2g->go;
