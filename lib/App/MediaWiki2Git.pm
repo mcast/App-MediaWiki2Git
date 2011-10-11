@@ -127,19 +127,27 @@ sub go {
     # There are several ways to dice the revision number fetching.
     # This keeps track of latest revision per-page, in our config.
 
-    foreach my $pagename ($self->pages) {
-        my $q = $mw->api
-          ({ action => 'query',
-             prop => 'revisions',
-             titles => $pagename,
-             rvstartid => $self->page_lastrev($pagename),
-             rvdir => 'newer',
-             rvlimit => $self->rvlimit,
-             rvprop => 'ids|flags|timestamp|user|comment|content' })
-        || $self->_mw_error;
+    my $more;
+    do {
+        $more = 0;
+        foreach my $pagename ($self->pages) {
+            my $rv = $self->page_lastrev($pagename);
+            $rv++ if $rv > 0; # avoid re-fetching the last, for tidiness & quiet
 
-        $self->_save_revs(%{ $q->{query}->{pages} }); # one pair
-    }
+            my $q = $mw->api
+              ({ action => 'query',
+                 prop => 'revisions',
+                 titles => $pagename,
+                 rvstartid => $rv,
+                 rvdir => 'newer',
+                 rvlimit => $self->rvlimit,
+                 rvprop => 'ids|flags|timestamp|user|comment|content' })
+                || $self->_mw_error;
+
+            $self->_save_revs(%{ $q->{query}->{pages} }); # one pair
+            $more ||= $q->{'query-continue'};
+        }
+    } while ($more);
 }
 
 
@@ -189,6 +197,7 @@ sub page_lastrev {
 }
 
 
+# Destructively takes out all the page content
 sub _save_revs {
     my ($self, $pageid, $page) = @_;
 
@@ -223,7 +232,7 @@ sub _save_page {
        $props->{comment} || '',
        Dump($props));
 
-    warn "[$author] $pagename $$props{revid}\n";
+    warn "[$pagename $$props{revid}] $author\n";
     $self->git->run(add => $fn);
     $self->git->run
       (commit => '-q',
