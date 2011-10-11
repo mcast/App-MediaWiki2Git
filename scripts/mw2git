@@ -1,6 +1,10 @@
 #! /usr/bin/env perl
+use strict;
+use warnings;
 
 use App::MediaWiki2Git;
+use Pod::Usage;
 
+pod2usage(-verbose => 2) if @ARGV;
 my $m2g = App::MediaWiki2Git->new;
 $m2g->go;

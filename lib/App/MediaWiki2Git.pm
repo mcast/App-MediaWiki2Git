@@ -191,7 +191,7 @@ sub pages {
 
 sub page_lastrev {
     my ($self, $pagename, $new_lastrev) = @_;
-    my $revs = $self->config->{page_revs} ||= {};
+    my $revs = $self->config->{_page_revs} ||= {};
     $revs->{$pagename} = $new_lastrev if defined $new_lastrev;
     return $revs->{$pagename} || 0;
 }
@@ -232,7 +232,7 @@ sub _save_page {
        $props->{comment} || '',
        Dump($props));
 
-    warn "[$pagename $$props{revid}] $author\n";
+    printf("[%s %s] %s\n", $pagename, $props->{revid}, $author);
     $self->git->run(add => $fn);
     $self->git->run
       (commit => '-q',
@@ -301,10 +301,12 @@ sub _build_host2nick {
 
     my $u2h = $cfg[0]{map};
     my %map = reverse %$u2h;
-    my $qualify = $self->config_for('dns_qual');
-    foreach my $h (keys %map) {
+    my $qualify = $self->config_for('dns_qual', undef, '');
+    if ($qualify ne '') {
+      foreach my $h (keys %map) {
         next if $h =~ /\./;
         $map{"$h$qualify"} = $map{$h}; # extra entry for FQDN
+      }
     }
 
     return \%map;
