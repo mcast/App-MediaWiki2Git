@@ -133,14 +133,10 @@ sub config_save {
     my ($self) = @_;
     my $fn = $self->config_filename;
 
-    write_file($fn, { atomic => 1 },
+    write_file($fn, { atomic => 1, binmode => ':utf8' },
                Dump($self->config));
 
     $self->git->run(add => $fn);
-    $self->git->run
-      (commit => '-q',
-       -m => 'automatic config_save',
-       -o => $fn);
 
     return 1;
 }
@@ -269,8 +265,6 @@ sub _save_revs {
     foreach my $rev (@{ $page->{revisions} }) {
         $self->_save_page($page->{title}, $rev);
     }
-
-    $self->config_save;
 }
 
 
@@ -278,7 +272,8 @@ sub _save_page {
     my ($self, $pagename, $props) = @_;
 
     my $fn = $pagename;
-    write_file($fn, { atomic => 1 }, delete $props->{'*'});
+    write_file($fn, { atomic => 1, binmode => ':utf8' },
+               delete $props->{'*'});
 
     my $author;
     if ($props->{user} =~ m{^[0-9.:]+$}) {
@@ -297,16 +292,16 @@ sub _save_page {
        $props->{comment} || '',
        Dump($props));
 
+    $self->page_lastrev($pagename, $props->{revid});
+    $self->config_save;
+
     printf("[%s %s] %s\n", $pagename, $props->{revid}, $author);
     $self->git->run(add => $fn);
     $self->git->run
       (commit => '-q',
        -m => $msg,
-       -o => $fn,
        '--author' => $author,
        '--date' => $props->{timestamp});
-
-    $self->page_lastrev($pagename, $props->{revid});
 }
 
 
