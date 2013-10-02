@@ -386,6 +386,18 @@ no Moose;
 __PACKAGE__->meta->make_immutable;
 
 
+=head1 SEE ALSO
+
+Via L<https://git.wiki.kernel.org/index.php/InterfacesFrontendsAndTools#Wikis.2C_blogs.2C_etc.>,
+
+=over 4
+
+=item L<https://github.com/scy/levitation>
+
+Imports dumps via L<git fast-import(1)>.
+
+=back
+
 =head1 AUTHOR
 
 Copyright (C) 2011 Genome Research Limited
